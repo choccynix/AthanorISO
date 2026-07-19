@@ -68,7 +68,7 @@ jobs:
             while IFS= read -r -d "" f; do
               KMERGE="${f}"
               break
-            done < <(find / -name kmerge.sh -print0 2>/dev/null)
+            done < <(find / /name kmerge.sh -print0 2>/dev/null)
           fi
 
           if [[ -z "${KMERGE}" ]]; then
@@ -81,7 +81,7 @@ jobs:
           grep "ksource" "${KMERGE}"
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6  # Updated from v4 to suppress the Node 20 deprecation warning
         with:
           path: anthoros
 
