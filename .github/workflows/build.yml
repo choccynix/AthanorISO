@@ -34,40 +34,48 @@ jobs:
           emerge-webrsync -q
 
           mkdir -p /etc/portage/package.accept_keywords
-          echo "dev-util/catalyst ~amd64" > /etc/portage/package.accept_keywords/catalyst
+          {
+            echo "dev-util/catalyst ~amd64"
+            echo "sys-kernel/dracut ~amd64"
+            echo "app-misc/livecd-tools ~amd64"
+          } > /etc/portage/package.accept_keywords/catalyst
 
-          # Host USE flags — efi-32 is required by catalyst[iso], not optional
           mkdir -p /etc/portage/package.use
           {
             echo "sys-apps/util-linux python"
             echo "sys-boot/grub grub_platforms_efi-32 grub_platforms_efi-64 grub_platforms_pc"
+            echo "sys-kernel/installkernel grub dracut -ugrd -ukify -generic-uki"
+            echo "sys-kernel/gentoo-kernel-bin -generic-uki"
+            echo "sys-kernel/dracut -systemd"
           } > /etc/portage/package.use/catalyst-host
 
           emerge --nospinner -q \
             dev-util/catalyst \
             dev-vcs/git
 
-      - name: Patch Catalyst kmerge.sh to use gentoo-kernel-bin
+      - name: Patch Catalyst to use gentoo-kernel-bin
         run: |
+          echo "Searching for kmerge.sh..."
           KMERGE=""
           while IFS= read -r -d "" f; do
             KMERGE="${f}"
             break
           done < <(find / -name kmerge.sh -print0 2>/dev/null)
           if [[ -z "${KMERGE}" ]]; then
-            echo "ERROR: kmerge.sh not found"
+            echo "ERROR: kmerge.sh not found anywhere"
             exit 1
           fi
-          echo "Patching: ${KMERGE}"
-          sed -i 's|sys-kernel/gentoo-kernel"|sys-kernel/gentoo-kernel-bin"|g' "${KMERGE}"
+          echo "Found: ${KMERGE}"
+          sed -i 's|sys-kernel/gentoo-kernel"|sys-kernel/gentoo-kernel-bin"|' "${KMERGE}"
           echo "Verified:"
-          grep -i "gentoo-kernel" "${KMERGE}" || true
+          grep "ksource" "${KMERGE}"
 
       - name: Checkout repository
-        run: git clone --depth=1 https://github.com/choccynix/AnthorISO.git /anthoros
+        run: |
+          git clone --depth=1 https://github.com/choccynix/AnthorISO.git /anthoros
 
       - name: Set VERSION
-        run: echo "VERSION=$(date +%Y%m%d)" >> "${GITHUB_ENV}"
+        run: echo "VERSION=$(date +%Y%m%d)" >> $GITHUB_ENV
 
       - name: Run build
         run: |
@@ -79,17 +87,10 @@ jobs:
         id: should-release
         run: |
           RELEASE=false
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            RELEASE=true
-          fi
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && \
-                "${{ github.event.inputs.publish_release }}" == "true" ]]; then
-            RELEASE=true
-          fi
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            RELEASE=true
-          fi
-          echo "release=${RELEASE}" >> "${GITHUB_OUTPUT}"
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then RELEASE=true; fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.publish_release }}" == "true" ]]; then RELEASE=true; fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then RELEASE=true; fi
+          echo "release=${RELEASE}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         if: steps.should-release.outputs.release == 'true'
@@ -109,6 +110,7 @@ jobs:
 
           Built from Gentoo stage3 musl+llvm+openrc using Catalyst.
 
+          ### Downloads
           | File | Description |
           |---|---|
           | \`anthoros-amd64-*.iso\` | Bootable ISO (BIOS + UEFI) |
