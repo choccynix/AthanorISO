@@ -106,12 +106,12 @@ echo "Snapshot: ${TREEISH}"
 # ── Step 3: livecd-stage1 ────────────────────────────────────────────────────
 log "Running livecd-stage1"
 fill_spec "${SPECS_DIR}/livecd-stage1.spec" "/tmp/anthoros-stage1.spec"
-catalyst --configs "${CATALYST_CONF}" -f /tmp/anthoros-stage1.spec
+catalyst --configs "${CATALYST_CONF}" -a -f /tmp/anthoros-stage1.spec
 
 # ── Step 4: livecd-stage2 ────────────────────────────────────────────────────
 log "Running livecd-stage2 (kernel + ISO)"
 fill_spec "${SPECS_DIR}/livecd-stage2.spec" "/tmp/anthoros-stage2.spec"
-catalyst --configs "${CATALYST_CONF}" -f /tmp/anthoros-stage2.spec
+catalyst --configs "${CATALYST_CONF}" -a -f /tmp/anthoros-stage2.spec
 
 # ── Step 5: Collect outputs ───────────────────────────────────────────────────
 log "Collecting outputs"
