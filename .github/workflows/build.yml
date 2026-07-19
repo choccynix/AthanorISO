@@ -17,22 +17,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-    
-    container:
-      image: gentoo/stage3:musl-llvm
-      options: --privileged
-
-    defaults:
-      run:
-        shell: bash
+      contents: write
 
     steps:
-      - name: Install dependencies
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run Gentoo Build
         run: |
+          # Write the container setup and build logic to a temporary script
+          cat << 'EOF' > run_build.sh
+          set -euo pipefail
+
+          # Prepare and sync Portage
           mkdir -p /var/db/repos/gentoo
           emerge-webrsync -q
 
+          # Configure keywords
           mkdir -p /etc/portage/package.accept_keywords
           {
             echo "dev-util/catalyst ~amd64"
@@ -40,6 +41,7 @@ jobs:
             echo "app-misc/livecd-tools ~amd64"
           } > /etc/portage/package.accept_keywords/catalyst
 
+          # Configure USE flags
           mkdir -p /etc/portage/package.use
           {
             echo "sys-apps/util-linux python"
@@ -49,26 +51,24 @@ jobs:
             echo "sys-kernel/dracut -systemd"
           } > /etc/portage/package.use/catalyst-host
 
+          # Install packages
           emerge --nospinner -q \
             dev-util/catalyst \
             dev-vcs/git
 
-      - name: Patch Catalyst to use gentoo-kernel-bin
-        run: |
+          # Patch Catalyst to use gentoo-kernel-bin
           echo "Searching for kmerge.sh..."
           KMERGE=""
-          # Look in /usr first (standard for Portage installations)
           while IFS= read -r -d "" f; do
             KMERGE="${f}"
             break
           done < <(find /usr -name kmerge.sh -print0 2>/dev/null)
           
-          # Fallback to searching the entire root / if not found
           if [[ -z "${KMERGE}" ]]; then
             while IFS= read -r -d "" f; do
               KMERGE="${f}"
               break
-            done < <(find / /name kmerge.sh -print0 2>/dev/null)
+            done < <(find / -name kmerge.sh -print0 2>/dev/null)
           fi
 
           if [[ -z "${KMERGE}" ]]; then
@@ -80,73 +80,34 @@ jobs:
           echo "Verified:"
           grep "ksource" "${KMERGE}"
 
-      - name: Checkout repository
-        uses: actions/checkout@v6  # Updated from v4 to suppress the Node 20 deprecation warning
-        with:
-          path: anthoros
-
-      - name: Create symlink to absolute path
-        run: ln -s "$GITHUB_WORKSPACE/anthoros" /anthoros
-
-      - name: Set VERSION
-        run: |
-          VERSION=$(date +%Y%m%d)
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          # Save VERSION to a file so the release job can read it
-          echo "${VERSION}" > /anthoros/VERSION.txt
-
-      - name: Run build
-        run: |
+          # Set permissions and run the orchestrator build
           chmod +x /anthoros/scripts/build.sh
           cd /anthoros
           VERSION="${VERSION}" ./scripts/build.sh
+          EOF
 
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: anthoros-build-assets
-          path: |
-            /anthoros/output/*.iso
-            /anthoros/output/*.iso.sha256
-            /anthoros/output/*.tar.xz
-            /anthoros/output/*.tar.xz.sha256
-            /anthoros/VERSION.txt
-          retention-days: 3
+          chmod +x run_build.sh
 
-  release:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      contents: write
-    
-    # Only run the release steps if triggered by schedule, manual selection, or a tag push
-    if: |
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true') ||
-      startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: anthoros-build-assets
-          path: release-assets
-
-      - name: Read VERSION
-        run: |
-          VERSION=$(cat release-assets/VERSION.txt)
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          # Clean up the file so it is not uploaded to the release
-          rm release-assets/VERSION.txt
+          # Run the temporary script inside the privileged Gentoo musl container
+          docker run --privileged --rm \
+            -v "${{ github.workspace }}:/anthoros" \
+            -e VERSION="$(date +%Y%m%d)" \
+            gentoo/stage3:musl-llvm \
+            /anthoros/run_build.sh
 
       - name: Create GitHub Release
+        if: |
+          github.event_name == 'schedule' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true') ||
+          startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          VERSION=$(date +%Y%m%d)
           TAG="rolling-${VERSION}"
           BUILD_DATE=$(date +%Y-%m-%d)
 
-          # Delete existing release and remote tag using the built-in clean up flag
+          # Delete existing release and tag using GitHub CLI natively on the host
           gh release delete "${TAG}" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
 
           gh release create "${TAG}" \
@@ -165,7 +126,7 @@ jobs:
 
           Built by GitHub Actions · Run \`${{ github.run_number }}\`" \
             --latest \
-            release-assets/*.iso \
-            release-assets/*.iso.sha256 \
-            release-assets/*.tar.xz \
-            release-assets/*.tar.xz.sha256
+            output/*.iso \
+            output/*.iso.sha256 \
+            output/*.tar.xz \
+            output/*.tar.xz.sha256
