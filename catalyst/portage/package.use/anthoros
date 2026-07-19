@@ -1,13 +1,9 @@
-# Required by dev-util/catalyst[iso] — non-negotiable
+# Required by dev-util/catalyst[iso]
 sys-boot/grub grub_platforms_efi-32 grub_platforms_efi-64 grub_platforms_pc
-
-# util-linux: python bindings required by catalyst
+# Required by catalyst
 sys-apps/util-linux python
-
-# installkernel: grub bootloader + dracut initramfs, no UKI/systemd
-# Note: systemd-boot requires systemd USE which is incompatible with musl+openrc
+# installkernel: grub + dracut, no UKI/systemd
 sys-kernel/installkernel grub dracut -ugrd -ukify -generic-uki
 sys-kernel/gentoo-kernel-bin -generic-uki
-
-# dracut: correct category is sys-kernel, without systemd for musl+openrc
+# dracut without systemd for musl+openrc
 sys-kernel/dracut -systemd

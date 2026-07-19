@@ -30,25 +30,25 @@ dd if=anthoros-amd64-YYYYMMDD.iso of=/dev/sdX bs=4M status=progress && sync
 - **Libc:** musl
 - **Toolchain:** LLVM/Clang
 - **Init:** OpenRC
-- **Bootloader:** systemd-boot (installed to disk), GRUB (ISO only)
 - **Kernel:** gentoo-kernel-bin
+- **Build tool:** Catalyst
 
 ---
 
 ## Build
 
-Builds run every Sunday at 03:00 UTC, or manually via Actions → Run workflow.
+Runs every Sunday at 03:00 UTC, or manually via Actions → Run workflow.
 
 ```
 catalyst/
-├── catalyst.conf          # Catalyst settings
+├── catalyst.conf
 ├── specs/
-│   ├── livecd-stage1.spec # Package installation
-│   └── livecd-stage2.spec # Kernel + ISO assembly
+│   ├── livecd-stage1.spec
+│   └── livecd-stage2.spec
 └── portage/
     ├── make.conf
-    ├── package.use/
-    └── package.accept_keywords/
+    ├── package.use/anthoros
+    └── package.accept_keywords/anthoros
 ```
 
 ---

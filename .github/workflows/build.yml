@@ -19,21 +19,20 @@ jobs:
     permissions:
       contents: write
 
+    defaults:
+      run:
+        shell: bash
+
+    container:
+      image: gentoo/stage3:musl-llvm
+      options: --privileged
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Run Gentoo Build
+      - name: Install dependencies
         run: |
-          # Write the container setup and build logic to a temporary script
-          cat << 'EOF' > run_build.sh
-          set -euo pipefail
-
-          # Prepare and sync Portage
           mkdir -p /var/db/repos/gentoo
           emerge-webrsync -q
 
-          # Configure keywords
           mkdir -p /etc/portage/package.accept_keywords
           {
             echo "dev-util/catalyst ~amd64"
@@ -41,7 +40,6 @@ jobs:
             echo "app-misc/livecd-tools ~amd64"
           } > /etc/portage/package.accept_keywords/catalyst
 
-          # Configure USE flags
           mkdir -p /etc/portage/package.use
           {
             echo "sys-apps/util-linux python"
@@ -51,64 +49,64 @@ jobs:
             echo "sys-kernel/dracut -systemd"
           } > /etc/portage/package.use/catalyst-host
 
-          # Install packages
           emerge --nospinner -q \
             dev-util/catalyst \
             dev-vcs/git
 
-          # Patch Catalyst to use gentoo-kernel-bin
-          echo "Searching for kmerge.sh..."
+      - name: Patch Catalyst kmerge.sh to use gentoo-kernel-bin
+        run: |
           KMERGE=""
           while IFS= read -r -d "" f; do
             KMERGE="${f}"
             break
-          done < <(find /usr -name kmerge.sh -print0 2>/dev/null)
-          
+          done < <(find / -name kmerge.sh -print0 2>/dev/null)
           if [[ -z "${KMERGE}" ]]; then
-            while IFS= read -r -d "" f; do
-              KMERGE="${f}"
-              break
-            done < <(find / -name kmerge.sh -print0 2>/dev/null)
-          fi
-
-          if [[ -z "${KMERGE}" ]]; then
-            echo "ERROR: kmerge.sh not found anywhere"
+            echo "ERROR: kmerge.sh not found"
             exit 1
           fi
-          echo "Found: ${KMERGE}"
-          sed -i 's|sys-kernel/gentoo-kernel"|sys-kernel/gentoo-kernel-bin"|' "${KMERGE}"
+          echo "Patching: ${KMERGE}"
+          sed -i 's|sys-kernel/gentoo-kernel"|sys-kernel/gentoo-kernel-bin"|g' "${KMERGE}"
           echo "Verified:"
-          grep "ksource" "${KMERGE}"
+          grep -i "gentoo-kernel" "${KMERGE}" || true
 
-          # Set permissions and run the orchestrator build
+      - name: Checkout repository
+        run: git clone --depth=1 https://github.com/choccynix/AnthorISO.git /anthoros
+
+      - name: Set VERSION
+        run: echo "VERSION=$(date +%Y%m%d)" >> "${GITHUB_ENV}"
+
+      - name: Run build
+        run: |
           chmod +x /anthoros/scripts/build.sh
           cd /anthoros
           VERSION="${VERSION}" ./scripts/build.sh
-          EOF
 
-          chmod +x run_build.sh
-
-          # Run the temporary script inside the privileged Gentoo musl container
-          docker run --privileged --rm \
-            -v "${{ github.workspace }}:/anthoros" \
-            -e VERSION="$(date +%Y%m%d)" \
-            gentoo/stage3:musl-llvm \
-            /anthoros/run_build.sh
+      - name: Set release flag
+        id: should-release
+        run: |
+          RELEASE=false
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            RELEASE=true
+          fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && \
+                "${{ github.event.inputs.publish_release }}" == "true" ]]; then
+            RELEASE=true
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            RELEASE=true
+          fi
+          echo "release=${RELEASE}" >> "${GITHUB_OUTPUT}"
 
       - name: Create GitHub Release
-        if: |
-          github.event_name == 'schedule' ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true') ||
-          startsWith(github.ref, 'refs/tags/v')
+        if: steps.should-release.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=$(date +%Y%m%d)
           TAG="rolling-${VERSION}"
           BUILD_DATE=$(date +%Y-%m-%d)
 
-          # Delete existing release and tag using GitHub CLI natively on the host
-          gh release delete "${TAG}" --repo "${{ github.repository }}" --yes --cleanup-tag 2>/dev/null || true
+          gh release delete "${TAG}" --repo "${{ github.repository }}" --yes 2>/dev/null || true
+          git -C /anthoros push origin ":refs/tags/${TAG}" 2>/dev/null || true
 
           gh release create "${TAG}" \
             --repo "${{ github.repository }}" \
@@ -117,7 +115,6 @@ jobs:
 
           Built from Gentoo stage3 musl+llvm+openrc using Catalyst.
 
-          ### Downloads
           | File | Description |
           |---|---|
           | \`anthoros-amd64-*.iso\` | Bootable ISO (BIOS + UEFI) |
@@ -126,7 +123,7 @@ jobs:
 
           Built by GitHub Actions · Run \`${{ github.run_number }}\`" \
             --latest \
-            output/*.iso \
-            output/*.iso.sha256 \
-            output/*.tar.xz \
-            output/*.tar.xz.sha256
+            /anthoros/output/*.iso \
+            /anthoros/output/*.iso.sha256 \
+            /anthoros/output/*.tar.xz \
+            /anthoros/output/*.tar.xz.sha256
