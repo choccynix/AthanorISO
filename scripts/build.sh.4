@@ -88,8 +88,7 @@ log "Creating Portage snapshot"
 catalyst --configs "${CATALYST_CONF}" -s stable
 
 TREEISH=''
-# Sort by modification time (newest first) to avoid selecting stale snapshots
-for f in $(ls -t "${CATALYST_DIR}/snapshots/"*.sqfs 2>/dev/null); do
+for f in "${CATALYST_DIR}/snapshots/"*.sqfs; do
   [[ -f "${f}" ]] || continue
   base=$(basename "${f}")
   TREEISH="${base#gentoo-}"
@@ -121,31 +120,13 @@ ISO_SRC="${CATALYST_DIR}/builds/anthoros/anthoros-amd64-${VERSION}.iso"
 ISO_OUT="${OUTPUT_DIR}/anthoros-amd64-${VERSION}.iso"
 TARBALL_OUT="${OUTPUT_DIR}/anthoros-stage3-amd64-${VERSION}.tar.xz"
 
-# Copy the generated ISO to output
 cp "${ISO_SRC}" "${ISO_OUT}"
-
-# OPTION A: If you only want to redistribute the vanilla Gentoo seed stage3:
 cp "${STAGE3_DEST}" "${TARBALL_OUT}"
 
-# OPTION B: If you instead want to distribute your actual custom compiled 
-# AnthorOS rootfs (requires "keepwork" configured in catalyst.conf):
-# CHROOT_DIR="${CATALYST_DIR}/tmp/anthoros/livecd-stage1-amd64-${VERSION}"
-# if [[ -d "${CHROOT_DIR}" ]]; then
-#   echo "Archiving custom AnthorOS rootfs..."
-#   tar -I 'xz -9 -T0' -cpf "${TARBALL_OUT}" -C "${CHROOT_DIR}" .
-# else
-#   echo "WARNING: Catalyst work directory not found. Defaulting to vanilla seed."
-#   cp "${STAGE3_DEST}" "${TARBALL_OUT}"
-# fi
-
-# Generate sha256 checksums
 pushd "${OUTPUT_DIR}" > /dev/null
 sha256sum "$(basename "${ISO_OUT}")"     > "$(basename "${ISO_OUT}").sha256"
 sha256sum "$(basename "${TARBALL_OUT}")" > "$(basename "${TARBALL_OUT}").sha256"
 popd > /dev/null
-
-# Clean up temporary spec files
-rm -f /tmp/anthoros-stage1.spec /tmp/anthoros-stage2.spec
 
 echo ""
 echo "Build complete. Outputs:"
