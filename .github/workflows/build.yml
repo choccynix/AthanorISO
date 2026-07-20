@@ -53,77 +53,53 @@ jobs:
             dev-util/catalyst \
             dev-vcs/git
 
-      - name: Patch Catalyst kmerge.sh to use gentoo-kernel-bin
+      - name: Patch Catalyst bugs
         run: |
+          # Use Python to do patches — avoids bash/sed/YAML escaping hell
+
+          # Fix 1: main.py calls .extend() on a set (Python sets have no extend)
+          MAIN_PY=""
+          while IFS= read -r -d "" f; do
+            MAIN_PY="${f}"
+            break
+          done < <(find / -path "*/catalyst/main.py" -print0 2>/dev/null)
+          [[ -z "${MAIN_PY}" ]] && { echo "ERROR: catalyst/main.py not found"; exit 1; }
+          echo "Patching: ${MAIN_PY}"
+
+          python3 << EOF
+import sys
+path = "${MAIN_PY}"
+with open(path) as f:
+    src = f.read()
+old = 'conf_values["options"].extend(options)'
+rep = 'conf_values["options"] = set(list(conf_values["options"]) + list(options))'
+if old in src:
+    with open(path, "w") as f:
+        f.write(src.replace(old, rep))
+    print("Fix 1 applied")
+else:
+    print("Fix 1: pattern not found, may already be patched")
+EOF
+
+          # Fix 2: kmerge.sh hardcodes gentoo-kernel instead of gentoo-kernel-bin
           KMERGE=""
           while IFS= read -r -d "" f; do
             KMERGE="${f}"
             break
           done < <(find / -name kmerge.sh -print0 2>/dev/null)
-          if [[ -z "${KMERGE}" ]]; then
-            echo "ERROR: kmerge.sh not found"
-            exit 1
-          fi
+          [[ -z "${KMERGE}" ]] && { echo "ERROR: kmerge.sh not found"; exit 1; }
           echo "Patching: ${KMERGE}"
-          sed -i 's|sys-kernel/gentoo-kernel"|sys-kernel/gentoo-kernel-bin"|g' "${KMERGE}"
-          echo "Verified:"
-          grep -i "gentoo-kernel" "${KMERGE}" || true
+
+          python3 << EOF
+path = "${KMERGE}"
+with open(path) as f:
+    src = f.read()
+patched = src.replace('sys-kernel/gentoo-kernel"', 'sys-kernel/gentoo-kernel-bin"')
+with open(path, "w") as f:
+    f.write(patched)
+print("Fix 2 applied")
+EOF
+
+          echo "All patches done."
 
       - name: Checkout repository
-        run: git clone --depth=1 https://github.com/choccynix/AnthorISO.git /anthoros
-
-      - name: Set VERSION
-        run: echo "VERSION=$(date +%Y%m%d)" >> "${GITHUB_ENV}"
-
-      - name: Run build
-        run: |
-          chmod +x /anthoros/scripts/build.sh
-          cd /anthoros
-          VERSION="${VERSION}" ./scripts/build.sh
-
-      - name: Set release flag
-        id: should-release
-        run: |
-          RELEASE=false
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
-            RELEASE=true
-          fi
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && \
-                "${{ github.event.inputs.publish_release }}" == "true" ]]; then
-            RELEASE=true
-          fi
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            RELEASE=true
-          fi
-          echo "release=${RELEASE}" >> "${GITHUB_OUTPUT}"
-
-      - name: Create GitHub Release
-        if: steps.should-release.outputs.release == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="rolling-${VERSION}"
-          BUILD_DATE=$(date +%Y-%m-%d)
-
-          gh release delete "${TAG}" --repo "${{ github.repository }}" --yes 2>/dev/null || true
-          git -C /anthoros push origin ":refs/tags/${TAG}" 2>/dev/null || true
-
-          gh release create "${TAG}" \
-            --repo "${{ github.repository }}" \
-            --title "AnthorOS Rolling Build ${BUILD_DATE}" \
-            --notes "## AnthorOS Rolling Build — ${BUILD_DATE}
-
-          Built from Gentoo stage3 musl+llvm+openrc using Catalyst.
-
-          | File | Description |
-          |---|---|
-          | \`anthoros-amd64-*.iso\` | Bootable ISO (BIOS + UEFI) |
-          | \`anthoros-stage3-amd64-*.tar.xz\` | Rootfs tarball |
-          | \`*.sha256\` | SHA-256 checksums |
-
-          Built by GitHub Actions · Run \`${{ github.run_number }}\`" \
-            --latest \
-            /anthoros/output/*.iso \
-            /anthoros/output/*.iso.sha256 \
-            /anthoros/output/*.tar.xz \
-            /anthoros/output/*.tar.xz.sha256
