@@ -2,7 +2,7 @@ name: Build AnthorOS
 
 on:
   schedule:
-    - cron: '0 0 * * 0'   # Every Sunday at midnight UTC
+    - cron: '0 0 * * 0'
   push:
     branches:
       - main
@@ -72,81 +72,13 @@ jobs:
           cd /anthoros
           VERSION="${VERSION}" ./scripts/build.sh
 
-      # ── Upload release (all branches) ────────────────────────────────────────
-      # Uses curl + GitHub API — no gh CLI needed, curl is in the base container
       - name: Upload release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          RUN_NUMBER: ${{ github.run_number }}
           BRANCH: ${{ github.ref_name }}
           EVENT: ${{ github.event_name }}
           PUBLISH_INPUT: ${{ github.event.inputs.publish_release }}
-        run: |
-          BUILD_DATE=$(date +%Y-%m-%d)
-          SAFE_BRANCH="${BRANCH//\//-}"
-
-          # Decide if this is a stable release or a dev artifact
-          IS_RELEASE=false
-          if [[ "${BRANCH}" == "main" ]]; then IS_RELEASE=true; fi
-          if [[ "${EVENT}" == "schedule" ]];  then IS_RELEASE=true; fi
-          if [[ "${EVENT}" == "workflow_dispatch" && "${PUBLISH_INPUT}" == "true" ]]; then
-            IS_RELEASE=true
-          fi
-
-          if [[ "${IS_RELEASE}" == "true" ]]; then
-            TAG="rolling-${VERSION}"
-            TITLE="AnthorOS Rolling Build ${BUILD_DATE}"
-            BODY="## AnthorOS Rolling Build — ${BUILD_DATE}\n\nBuilt from Gentoo stage3 musl+llvm+openrc using Catalyst.\n\n| File | Description |\n|---|---|\n| \`anthoros-amd64-*.iso\` | Bootable ISO (BIOS + UEFI) |\n| \`anthoros-stage3-amd64-*.tar.xz\` | Rootfs tarball |\n| \`*.sha256\` | SHA-256 checksums |\n\nBuilt by GitHub Actions · Run \`${RUN_NUMBER}\` · Branch \`${BRANCH}\`"
-            PRERELEASE=false
-          else
-            TAG="artifacts-${SAFE_BRANCH}"
-            TITLE="Dev artifact: ${BRANCH} (${BUILD_DATE})"
-            BODY="Dev build from branch \`${BRANCH}\` — run ${RUN_NUMBER}. Not a stable release."
-            PRERELEASE=true
-          fi
-
-          API="https://api.github.com/repos/${REPO}"
-          AUTH="Authorization: Bearer ${GH_TOKEN}"
-          CT="Content-Type: application/json"
-
-          # Delete existing release and tag if present
-          EXISTING=$(curl -fsSL -H "${AUTH}" "${API}/releases/tags/${TAG}" 2>/dev/null || true)
-          RELEASE_ID=$(echo "${EXISTING}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || true)
-          if [[ -n "${RELEASE_ID}" ]]; then
-            curl -fsSL -X DELETE -H "${AUTH}" "${API}/releases/${RELEASE_ID}" > /dev/null
-            curl -fsSL -X DELETE -H "${AUTH}" "${API}/git/refs/tags/${TAG}" > /dev/null || true
-          fi
-
-          # Create release
-          PAYLOAD=$(python3 -c "
-import json, sys
-print(json.dumps({
-  'tag_name': '${TAG}',
-  'name': '${TITLE}',
-  'body': '${BODY}',
-  'draft': False,
-  'prerelease': ${PRERELEASE},
-  'make_latest': str(not ${PRERELEASE}).lower()
-}))
-")
-          RELEASE=$(curl -fsSL -X POST -H "${AUTH}" -H "${CT}" \
-            -d "${PAYLOAD}" "${API}/releases")
-          UPLOAD_URL=$(echo "${RELEASE}" | python3 -c \
-            "import sys,json; print(json.load(sys.stdin)['upload_url'].split('{')[0])")
-
-          echo "Release created. Upload URL: ${UPLOAD_URL}"
-
-          # Upload all output files
-          for FILE in /anthoros/output/*; do
-            FILENAME=$(basename "${FILE}")
-            MIME="application/octet-stream"
-            echo "Uploading ${FILENAME}..."
-            curl -fsSL -X POST -H "${AUTH}" \
-              -H "Content-Type: ${MIME}" \
-              --data-binary "@${FILE}" \
-              "${UPLOAD_URL}?name=${FILENAME}" > /dev/null
-            echo "  ✓ ${FILENAME}"
-          done
-
-          echo "All files uploaded to release: ${TAG}"
+          RUN_NUMBER: ${{ github.run_number }}
+          VERSION: ${{ env.VERSION }}
+        run: python3 /anthoros/scripts/upload-release.py /anthoros/output
