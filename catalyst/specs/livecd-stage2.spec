@@ -8,13 +8,19 @@ source_subpath: anthoros/livecd-stage1-amd64-@VERSION@
 compression_mode: pixz
 
 portage_confdir: @REPO_DIR@/catalyst/portage
+livecd/fsscript: @REPO_DIR@/catalyst/files/fsscript.sh
 
-livecd/bootargs: dokeymap
+# volid must be a single token — no spaces — GRUB searches by this exact label
+livecd/volid: ANTHOROS
 livecd/fstype: squashfs
 livecd/iso: anthoros-amd64-@VERSION@.iso
 livecd/type: gentoo-release-minimal
-livecd/volid: AnthorOS amd64 @VERSION@
 livecd/depclean: yes
+
+# rd.live.image tells dracut this is a live image
+# root=live:CDLABEL=ANTHOROS must match volid exactly
+# rd.live.squashimg=anthoros.squashfs tells dracut the squashfs filename
+livecd/bootargs: dokeymap rd.live.image rd.live.squashimg=anthoros.squashfs
 
 boot/kernel: anthoros
 boot/kernel/anthoros/distkernel: yes
@@ -23,7 +29,9 @@ boot/kernel/anthoros/packages:
 	sys-boot/grub
 	sys-kernel/dracut
 
-boot/kernel/anthoros/dracut_args: --xz --no-hostonly -a dmsquash-live -o btrfs -o crypt -o i18n
+# Match what Gentoo releng uses — add mdraid, usrmount, lunmask
+# these are needed for reliable live boot
+boot/kernel/anthoros/dracut_args: --xz --no-hostonly -a dmsquash-live -a mdraid -o btrfs -o crypt -o i18n -o usrmount -o lunmask
 
 livecd/rm:
 	/usr/share/doc
