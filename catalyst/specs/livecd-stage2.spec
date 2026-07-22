@@ -17,9 +17,7 @@ livecd/iso: anthoros-amd64-@VERSION@.iso
 livecd/type: gentoo-release-minimal
 livecd/depclean: yes
 
-# rd.live.image tells dracut this is a live image
-# root=live:CDLABEL=ANTHOROS must match volid exactly
-# rd.live.squashimg=anthoros.squashfs tells dracut the squashfs filename
+# rd.live.image + CDLABEL must match volid exactly
 livecd/bootargs: dokeymap rd.live.image rd.live.squashimg=anthoros.squashfs
 
 boot/kernel: anthoros
@@ -28,10 +26,12 @@ boot/kernel/anthoros/sources: gentoo-kernel-bin
 boot/kernel/anthoros/packages:
 	sys-boot/grub
 	sys-kernel/dracut
+	sys-fs/squashfs-tools
+	sys-fs/mdadm
 
-# Match what Gentoo releng uses — add mdraid, usrmount, lunmask
-# these are needed for reliable live boot
-boot/kernel/anthoros/dracut_args: --xz --no-hostonly -a dmsquash-live -a mdraid -o btrfs -o crypt -o i18n -o usrmount -o lunmask
+# mdraid needs mdadm, squashfs-tools needed for squashfs live boot
+# omit crypt, i18n, usrmount, lunmask — not needed for minimal live
+boot/kernel/anthoros/dracut_args: --xz --no-hostonly -a dmsquash-live -a mdraid -o btrfs -o crypt -o i18n
 
 livecd/rm:
 	/usr/share/doc
