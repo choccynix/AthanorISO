@@ -18,7 +18,7 @@ livecd/type: gentoo-release-minimal
 livecd/depclean: yes
 
 # rd.live.image + CDLABEL must match volid exactly
-livecd/bootargs: dokeymap rd.live.image rd.live.squashimg=anthoros.squashfs
+livecd/bootargs: rd.live.image rd.live.squashimg=anthoros.squashfs
 
 boot/kernel: anthoros
 boot/kernel/anthoros/distkernel: yes
