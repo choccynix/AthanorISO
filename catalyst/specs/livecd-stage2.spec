@@ -1,37 +1,36 @@
 subarch: amd64
 version_stamp: @VERSION@
 target: livecd-stage2
-rel_type: anthoros
+rel_type: athanor
 profile: default/linux/amd64/23.0/musl/llvm
 snapshot_treeish: @TREEISH@
-source_subpath: anthoros/livecd-stage1-amd64-@VERSION@
+source_subpath: athanor/livecd-stage1-amd64-@VERSION@
 compression_mode: pixz
 
 portage_confdir: @REPO_DIR@/catalyst/portage
 livecd/fsscript: @REPO_DIR@/catalyst/files/fsscript.sh
 
-# volid must be a single token — no spaces — GRUB searches by this exact label
-livecd/volid: ANTHOROS
+# Single-word volid — GRUB label search requires no spaces
+livecd/volid: ATHANOROS
 livecd/fstype: squashfs
-livecd/iso: anthoros-amd64-@VERSION@.iso
+livecd/iso: athanoros-amd64-@VERSION@.iso
 livecd/type: gentoo-release-minimal
 livecd/depclean: yes
 
-# rd.live.image + CDLABEL must match volid exactly
-livecd/bootargs: rd.live.image rd.live.squashimg=anthoros.squashfs console=tty0
+# console=tty1 forces kernel to use a single console
+# this stops keyboard input being split across multiple ttys (scrambled input bug)
+livecd/bootargs: rd.live.image rd.live.squashimg=athanoros.squashfs console=tty1
 
-boot/kernel: anthoros
-boot/kernel/anthoros/distkernel: yes
-boot/kernel/anthoros/sources: gentoo-kernel-bin
-boot/kernel/anthoros/packages:
+boot/kernel: athanor
+boot/kernel/athanor/distkernel: yes
+boot/kernel/athanor/sources: gentoo-kernel-bin
+boot/kernel/athanor/packages:
 	sys-boot/grub
 	sys-kernel/dracut
 	sys-fs/squashfs-tools
 	sys-fs/mdadm
 
-# mdraid needs mdadm, squashfs-tools needed for squashfs live boot
-# omit crypt, i18n, usrmount, lunmask — not needed for minimal live
-boot/kernel/anthoros/dracut_args: --xz --no-hostonly -a dmsquash-live -a mdraid -o btrfs -o crypt -o i18n
+boot/kernel/athanor/dracut_args: --xz --no-hostonly -a dmsquash-live -a mdraid -o btrfs -o crypt -o i18n
 
 livecd/rm:
 	/usr/share/doc

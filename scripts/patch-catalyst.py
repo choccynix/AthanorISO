@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Patch Catalyst bugs before running a build.
+Patch Catalyst upstream bugs before running a build.
 
-Fix 1: main.py calls .extend() on a set — sets have no extend() in Python.
+Fix 1: main.py calls .extend() on a set() — sets have no extend().
 Fix 2: kmerge.sh hardcodes gentoo-kernel instead of gentoo-kernel-bin.
 """
 import os
@@ -10,8 +10,7 @@ import sys
 
 def find_file(name, path_fragment=None):
     for root, dirs, files in os.walk('/'):
-        # Skip noisy dirs
-        for skip in ('/proc', '/sys', '/dev'):
+        for skip in ('/proc', '/sys', '/dev', '/run'):
             if root.startswith(skip):
                 dirs.clear()
                 break
@@ -24,7 +23,7 @@ def find_file(name, path_fragment=None):
 
 errors = []
 
-# ── Fix 1: main.py options.extend() ─────────────────────────────────────────
+# Fix 1: main.py options.extend()
 print("Searching for catalyst/main.py...")
 main_py = find_file('main.py', 'catalyst')
 if not main_py:
@@ -42,7 +41,7 @@ else:
     else:
         print("Fix 1: pattern not found, may already be patched")
 
-# ── Fix 2: kmerge.sh gentoo-kernel → gentoo-kernel-bin ───────────────────────
+# Fix 2: kmerge.sh gentoo-kernel -> gentoo-kernel-bin
 print("Searching for kmerge.sh...")
 kmerge = find_file('kmerge.sh')
 if not kmerge:
@@ -60,4 +59,4 @@ if errors:
     print(f"\nERRORS: {errors}", file=sys.stderr)
     sys.exit(1)
 
-print("\nAll patches applied successfully.")
+print("\nAll patches applied.")

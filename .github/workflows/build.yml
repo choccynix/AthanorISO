@@ -1,4 +1,4 @@
-name: Build AnthorOS
+name: Build AthanorOS
 
 on:
   schedule:
@@ -58,18 +58,18 @@ jobs:
       - name: Checkout repository
         run: |
           git clone --depth=1 --branch "${{ github.ref_name }}" \
-            https://github.com/choccynix/AnthorISO.git /anthoros
+            https://github.com/choccynix/AthanorISO.git /athanor
 
       - name: Patch Catalyst bugs
-        run: python3 /anthoros/scripts/patch-catalyst.py
+        run: python3 /athanor/scripts/patch-catalyst.py
 
       - name: Set VERSION
         run: echo "VERSION=$(date +%Y%m%d)" >> "${GITHUB_ENV}"
 
       - name: Run build
         run: |
-          chmod +x /anthoros/scripts/build.sh
-          cd /anthoros
+          chmod +x /athanor/scripts/build.sh
+          cd /athanor
           VERSION="${VERSION}" ./scripts/build.sh
 
       - name: Upload release
@@ -81,4 +81,4 @@ jobs:
           PUBLISH_INPUT: ${{ github.event.inputs.publish_release }}
           RUN_NUMBER: ${{ github.run_number }}
           VERSION: ${{ env.VERSION }}
-        run: python3 /anthoros/scripts/upload-release.py /anthoros/output
+        run: python3 /athanor/scripts/upload-release.py /athanor/output

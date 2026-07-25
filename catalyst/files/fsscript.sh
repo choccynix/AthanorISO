@@ -2,49 +2,77 @@
 # fsscript.sh — runs inside the stage2 chroot after packages are installed
 set -euo pipefail
 
-# ── os-release — fixes "Gentoo Linux" on OpenRC boot banner ──────────────────
+# ── os-release ────────────────────────────────────────────────────────────────
 cat > /etc/os-release << 'EOF'
-NAME="AnthorOS"
+NAME="AthanorOS"
 VERSION="rolling"
-ID=anthoros
+ID=athanoros
 ID_LIKE=gentoo
-PRETTY_NAME="AnthorOS (Live)"
-HOME_URL="https://github.com/choccynix/AnthorISO"
+PRETTY_NAME="AthanorOS (Live)"
+HOME_URL="https://github.com/choccynix/AthanorISO"
 BUILD_ID=rolling
 ANSI_COLOR="1;35"
 EOF
 ln -sf /etc/os-release /usr/lib/os-release 2>/dev/null || true
 
 # ── hostname ──────────────────────────────────────────────────────────────────
-echo "anthoros" > /etc/hostname
+echo "athanoros" > /etc/hostname
 cat > /etc/hosts << 'EOF'
 127.0.0.1   localhost
-127.0.1.1   anthoros
+127.0.1.1   athanoros
 ::1         localhost
 EOF
+
+# ── Clone athanor-installer into the live image ───────────────────────────────
+echo "Cloning athanor-installer..."
+git clone --depth=1 https://github.com/choccynix/athanor-installer.git \
+    /opt/athanor-installer 2>/dev/null || {
+    echo "Warning: could not clone athanor-installer (repo may not be public yet)"
+    mkdir -p /opt/athanor-installer
+}
+
+# Make all scripts executable
+chmod +x /opt/athanor-installer/*.sh 2>/dev/null || true
+
+# Create a convenience wrapper so 'install-athanor' works from anywhere
+cat > /usr/local/bin/install-athanor << 'WRAPPER'
+#!/usr/bin/env bash
+exec /opt/athanor-installer/linter.sh "$@"
+WRAPPER
+chmod +x /usr/local/bin/install-athanor
 
 # ── motd ──────────────────────────────────────────────────────────────────────
 cat > /etc/motd << 'EOF'
 
-  ▄▄▄   ▄  ▄▄▄▄▄▄▄ ▄▄   ▄▄ ▄▄▄▄▄▄▄ ▄▄▄▄▄▄   ▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄
- █   █ █ █       █  █ █ █  █       █   ▄  █ █       █       █
- █   █▄█ █▄     ▄█  █▄█ █  █   ▄   █  █ █ █ █   ▄   █  ▄▄▄▄▄█
- █      ▄  █   █ █       █  █  █ █  █   █▄▄█▄█  █ █  █ █▄▄▄▄▄
- █     █▄█ █   █ █   ▄   █  █  █▄█  █    ▄▄  █  █▄█  █▄▄▄▄▄  █
- █    ▄  █ █   █ █  █ █  █  █       █   █  █ █       █▄▄▄▄▄█ █
- █▄▄▄█ █▄█ █▄▄▄█ █▄▄█ █▄▄█  █▄▄▄▄▄▄▄█▄▄▄█  █▄█▄▄▄▄▄▄▄█▄▄▄▄▄▄▄█
+ █████╗ ████████╗██╗  ██╗ █████╗ ███╗   ██╗ ██████╗ ██████╗  ██████╗ ███████╗
+██╔══██╗╚══██╔══╝██║  ██║██╔══██╗████╗  ██║██╔═══██╗██╔══██╗██╔═══██╗██╔════╝
+███████║   ██║   ███████║███████║██╔██╗ ██║██║   ██║██████╔╝██║   ██║███████╗
+██╔══██║   ██║   ██╔══██║██╔══██║██║╚██╗██║██║   ██║██╔══██╗██║   ██║╚════██║
+██║  ██║   ██║   ██║  ██║██║  ██║██║ ╚████║╚██████╔╝██║  ██║╚██████╔╝███████║
+╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 
   Diverge. Distill. Transcend.
   musl · llvm · openrc · amd64
 
-  ══════════════════════════════════════════════════════════════════
+  ══════════════════════════════════════════════════════════════════════
 
-  Welcome to the AnthorOS Live Environment.
+  Welcome to the AthanorOS Live Environment.
 
   This is an early development release. You are running a minimal
   live system built on Gentoo with musl libc, LLVM/Clang, and OpenRC.
 
-  ── What's available ───────────────────────────────────────────────
+  AthanorOS takes its name from the athanor — the alchemist's furnace,
+  a place of patient transformation. This system is that furnace.
+  What you build with it is up to you.
+
+  ── Installer ──────────────────────────────────────────────────────────
+  To install AthanorOS to disk, run:
+
+      install-athanor
+
+  Installer files are in /opt/athanor-installer/
+
+  ── What's available ───────────────────────────────────────────────────
   • vim, nano          — text editors
   • parted, gptfdisk   — disk partitioning
   • e2fsprogs, btrfs   — filesystem tools
@@ -53,39 +81,31 @@ cat > /etc/motd << 'EOF'
   • curl, wget         — file transfer
   • htop               — process monitor
 
-  ── Installer ──────────────────────────────────────────────────────
-  An installer is in development. For now, installation is manual.
-  See: https://github.com/choccynix/AnthorISO
-
-  ── Networking ─────────────────────────────────────────────────────
+  ── Networking ─────────────────────────────────────────────────────────
   • Wired:    dhcpcd <interface>
-  • Wireless: wpa_supplicant + dhcpcd
+  • Wireless: wpa_supplicant -B -i <iface> -c /etc/wpa_supplicant.conf
+              dhcpcd <iface>
 
-  ══════════════════════════════════════════════════════════════════
+  ══════════════════════════════════════════════════════════════════════
 
 EOF
 
 # ── /etc/issue ────────────────────────────────────────────────────────────────
 cat > /etc/issue << 'EOF'
-AnthorOS Live — musl · llvm · openrc
+AthanorOS Live — musl · llvm · openrc
 Login as root (no password)
 
 EOF
 
-# ── agetty — ONLY on tty1, stop other gettys competing for input ──────────────
-# Remove any default getty configs that might run on multiple ttys
-rm -f /etc/init.d/agetty.tty2 2>/dev/null || true
-rm -f /etc/init.d/agetty.tty3 2>/dev/null || true
-rm -f /etc/init.d/agetty.tty4 2>/dev/null || true
-rm -f /etc/init.d/agetty.tty5 2>/dev/null || true
-rm -f /etc/init.d/agetty.tty6 2>/dev/null || true
-
-# Disable all gettys from default runlevel first
+# ── agetty — ONLY tty1, no competing gettys (fixes scrambled keyboard) ────────
+# The keyboard scramble happens when multiple agetty processes all receive the
+# same keystrokes and interleave them. Kill all but tty1.
 for i in 2 3 4 5 6; do
     rc-update del agetty.tty${i} default 2>/dev/null || true
+    rm -f /etc/init.d/agetty.tty${i} 2>/dev/null || true
+    rm -f /etc/conf.d/agetty.tty${i} 2>/dev/null || true
 done
 
-# Configure tty1 with autologin — explicit tty device, no competing consoles
 mkdir -p /etc/conf.d
 cat > /etc/conf.d/agetty.tty1 << 'EOF'
 agetty_options="--autologin root --noclear"
@@ -95,7 +115,7 @@ EOF
 ln -sf /etc/init.d/agetty /etc/init.d/agetty.tty1 2>/dev/null || true
 rc-update add agetty.tty1 default 2>/dev/null || true
 
-# ── root with no password ─────────────────────────────────────────────────────
+# ── root with no password for live session ────────────────────────────────────
 passwd -d root
 
 # ── sshd ──────────────────────────────────────────────────────────────────────

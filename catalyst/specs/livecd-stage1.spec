@@ -1,10 +1,10 @@
 subarch: amd64
 version_stamp: @VERSION@
 target: livecd-stage1
-rel_type: anthoros
+rel_type: athanor
 profile: default/linux/amd64/23.0/musl/llvm
 snapshot_treeish: @TREEISH@
-source_subpath: anthoros/stage3-amd64-musl-llvm-openrc-@VERSION@
+source_subpath: athanor/stage3-amd64-musl-llvm-openrc-@VERSION@
 compression_mode: pixz
 
 portage_confdir: @REPO_DIR@/catalyst/portage
@@ -19,6 +19,7 @@ livecd/packages:
 	app-misc/screen
 	app-misc/livecd-tools
 	app-shells/bash
+	dev-vcs/git
 	sys-fs/e2fsprogs
 	sys-fs/dosfstools
 	sys-fs/btrfs-progs

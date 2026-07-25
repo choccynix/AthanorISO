@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# build.sh — AnthorOS build orchestrator (Catalyst-based)
+# build.sh — AthanorOS build orchestrator (Catalyst-based)
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CATALYST_DIR="/var/tmp/catalyst"
-BUILDS_DIR="${CATALYST_DIR}/builds/anthoros"
+BUILDS_DIR="${CATALYST_DIR}/builds/athanor"
 OUTPUT_DIR="${REPO_DIR}/output"
 SPECS_DIR="${REPO_DIR}/catalyst/specs"
 CATALYST_CONF="${REPO_DIR}/catalyst/catalyst.conf"
@@ -29,9 +29,8 @@ fill_spec() {
     "${src}" > "${dst}"
 }
 
-# ── Pre-flight: check USE flags before wasting build time ─────────────────────
+# ── Pre-flight USE flag check ─────────────────────────────────────────────────
 log "Pre-flight USE flag check"
-
 if ! emerge --pretend --nospinner --autounmask=n \
     dev-util/catalyst \
     sys-boot/grub \
@@ -39,9 +38,8 @@ if ! emerge --pretend --nospinner --autounmask=n \
     sys-kernel/dracut \
     sys-kernel/gentoo-kernel-bin \
     sys-kernel/installkernel 2>&1; then
-  echo ""
   echo "ERROR: USE flag pre-flight failed."
-  echo "Fix flags in:      ${REPO_DIR}/catalyst/portage/package.use/anthoros"
+  echo "Fix flags in:      ${REPO_DIR}/catalyst/portage/package.use/athanor"
   echo "Fix host flags in: /etc/portage/package.use/catalyst-host"
   exit 1
 fi
@@ -98,27 +96,35 @@ done
 
 if [[ -z "${TREEISH}" ]]; then
   echo "ERROR: No snapshot found in ${CATALYST_DIR}/snapshots/"
-  ls -la "${CATALYST_DIR}/snapshots/" || true
   exit 1
 fi
 echo "Snapshot: ${TREEISH}"
 
+# ── Step 2.5: Stage installer files for fsscript ─────────────────────────────
+log "Staging installer files"
+if [[ -d "${REPO_DIR}/installer" ]]; then
+  cp -r "${REPO_DIR}/installer" "${CATALYST_DIR}/installer"
+  echo "Installer staged from ${REPO_DIR}/installer"
+else
+  echo "No installer/ directory found in repo — skipping"
+fi
+
 # ── Step 3: livecd-stage1 ────────────────────────────────────────────────────
 log "Running livecd-stage1"
-fill_spec "${SPECS_DIR}/livecd-stage1.spec" "/tmp/anthoros-stage1.spec"
-catalyst --configs "${CATALYST_CONF}" -a -f /tmp/anthoros-stage1.spec
+fill_spec "${SPECS_DIR}/livecd-stage1.spec" "/tmp/athanor-stage1.spec"
+catalyst --configs "${CATALYST_CONF}" -a -f /tmp/athanor-stage1.spec
 
 # ── Step 4: livecd-stage2 ────────────────────────────────────────────────────
 log "Running livecd-stage2 (kernel + ISO)"
-fill_spec "${SPECS_DIR}/livecd-stage2.spec" "/tmp/anthoros-stage2.spec"
-catalyst --configs "${CATALYST_CONF}" -a -f /tmp/anthoros-stage2.spec
+fill_spec "${SPECS_DIR}/livecd-stage2.spec" "/tmp/athanor-stage2.spec"
+catalyst --configs "${CATALYST_CONF}" -a -f /tmp/athanor-stage2.spec
 
 # ── Step 5: Collect outputs ───────────────────────────────────────────────────
 log "Collecting outputs"
 
-ISO_SRC="${CATALYST_DIR}/builds/anthoros/anthoros-amd64-${VERSION}.iso"
-ISO_OUT="${OUTPUT_DIR}/anthoros-amd64-${VERSION}.iso"
-TARBALL_OUT="${OUTPUT_DIR}/anthoros-stage3-amd64-${VERSION}.tar.xz"
+ISO_SRC="${CATALYST_DIR}/builds/athanor/athanoros-amd64-${VERSION}.iso"
+ISO_OUT="${OUTPUT_DIR}/athanoros-amd64-${VERSION}.iso"
+TARBALL_OUT="${OUTPUT_DIR}/athanoros-stage3-amd64-${VERSION}.tar.xz"
 
 cp "${ISO_SRC}" "${ISO_OUT}"
 cp "${STAGE3_DEST}" "${TARBALL_OUT}"
