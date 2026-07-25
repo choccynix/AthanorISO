@@ -37,7 +37,7 @@ chmod +x /opt/athanor-installer/*.sh 2>/dev/null || true
 # Create a convenience wrapper so 'install-athanor' works from anywhere
 cat > /usr/local/bin/install-athanor << 'WRAPPER'
 #!/usr/bin/env bash
-exec /opt/athanor-installer/linter.sh "$@"
+exec /opt/athanor-installer/Athanor_installer.sh "$@"
 WRAPPER
 chmod +x /usr/local/bin/install-athanor
 
