@@ -56,9 +56,12 @@ jobs:
           emerge --nospinner -q dev-util/catalyst dev-vcs/git
 
       - name: Checkout repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git clone --depth=1 --branch "${{ github.ref_name }}" \
-            https://github.com/choccynix/AthanorISO.git /athanor
+            "https://x-access-token:${GH_TOKEN}@github.com/choccynix/AthanorISO.git" \
+            /athanor
 
       - name: Patch Catalyst bugs
         run: python3 /athanor/scripts/patch-catalyst.py
