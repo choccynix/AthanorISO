@@ -19,7 +19,7 @@ livecd/depclean: yes
 
 # console=tty1 forces kernel to use a single console
 # this stops keyboard input being split across multiple ttys (scrambled input bug)
-livecd/bootargs: rd.live.image rd.live.squashimg=athanoros.squashfs console=tty1
+livecd/bootargs: rd.live.image rd.live.squashimg=athanoros.squashfs
 
 boot/kernel: athanor
 boot/kernel/athanor/distkernel: yes
