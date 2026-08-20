@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# build.sh — AthanorOS build orchestrator (Catalyst-based)
+# build.sh — AthanorOS build orchestrator
+# Builds minimal and desktop editions via Catalyst
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -10,6 +11,8 @@ SPECS_DIR="${REPO_DIR}/catalyst/specs"
 CATALYST_CONF="${REPO_DIR}/catalyst/catalyst.conf"
 VERSION="${VERSION:-$(date +%Y%m%d)}"
 BRANCH="${BRANCH:-main}"
+# EDITIONS: space-separated list — "minimal", "desktop", or "minimal desktop"
+EDITIONS="${EDITIONS:-minimal desktop}"
 MIRROR="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-musl-llvm-openrc"
 
 mkdir -p "${BUILDS_DIR}" "${OUTPUT_DIR}"
@@ -34,15 +37,13 @@ fill_spec() {
 if [[ "${BRANCH}" == "dev" || "${BRANCH}" == feature/* || "${BRANCH}" == fix/* ]]; then
   log "Dev branch (${BRANCH}) — enabling athanor-binpkgs binhost"
 
-  if [[ -n "${GH_TOKEN:-}" ]]; then
+  if [[ -n "${BINPKGS_TOKEN:-}" || -n "${GH_TOKEN:-}" ]]; then
     echo "Refreshing binhost Packages index..."
     BINPKG_REPO="choccynix/athanor-binpkgs" \
-      GH_TOKEN="${GH_TOKEN}" \
+      GH_TOKEN="${GH_TOKEN:-}" \
       BINPKGS_TOKEN="${BINPKGS_TOKEN:-}" \
       python3 "${REPO_DIR}/scripts/generate-binhost-index.py" \
       || echo "Warning: index refresh failed, building from source if needed"
-  else
-    echo "No GH_TOKEN — skipping binhost index refresh"
   fi
 
   if [[ -f "${REPO_DIR}/catalyst/portage/make.conf.dev" ]]; then
@@ -130,31 +131,47 @@ else
   echo "No installer/ directory — skipping"
 fi
 
-# ── Step 3: livecd-stage1 ────────────────────────────────────────────────────
-log "Running livecd-stage1"
-fill_spec "${SPECS_DIR}/livecd-stage1.spec" "/tmp/athanor-stage1.spec"
-catalyst --configs "${CATALYST_CONF}" -a -f /tmp/athanor-stage1.spec
+# ── Step 3+: Build each edition ──────────────────────────────────────────────
+for EDITION in ${EDITIONS}; do
+  log "Building edition: ${EDITION}"
 
-# ── Step 4: livecd-stage2 ────────────────────────────────────────────────────
-log "Running livecd-stage2 (kernel + ISO)"
-fill_spec "${SPECS_DIR}/livecd-stage2.spec" "/tmp/athanor-stage2.spec"
-catalyst --configs "${CATALYST_CONF}" -a -f /tmp/athanor-stage2.spec
+  STAGE1_SPEC="${SPECS_DIR}/livecd-stage1-${EDITION}.spec"
+  STAGE2_SPEC="${SPECS_DIR}/livecd-stage2-${EDITION}.spec"
 
-# ── Step 5: Collect outputs ───────────────────────────────────────────────────
-log "Collecting outputs"
+  if [[ ! -f "${STAGE1_SPEC}" || ! -f "${STAGE2_SPEC}" ]]; then
+    echo "ERROR: Spec files not found for edition '${EDITION}'"
+    echo "  Expected: ${STAGE1_SPEC}"
+    echo "  Expected: ${STAGE2_SPEC}"
+    exit 1
+  fi
 
-ISO_SRC="${CATALYST_DIR}/builds/athanor/athanoros-amd64-${VERSION}.iso"
-ISO_OUT="${OUTPUT_DIR}/athanoros-amd64-${VERSION}.iso"
+  fill_spec "${STAGE1_SPEC}" "/tmp/athanor-stage1-${EDITION}.spec"
+  fill_spec "${STAGE2_SPEC}" "/tmp/athanor-stage2-${EDITION}.spec"
+
+  log "livecd-stage1 [${EDITION}]"
+  catalyst --configs "${CATALYST_CONF}" -a -f "/tmp/athanor-stage1-${EDITION}.spec"
+
+  log "livecd-stage2 [${EDITION}]"
+  catalyst --configs "${CATALYST_CONF}" -a -f "/tmp/athanor-stage2-${EDITION}.spec"
+
+  # Collect outputs for this edition
+  ISO_SRC="${CATALYST_DIR}/builds/athanor/athanoros-${EDITION}-amd64-${VERSION}.iso"
+  ISO_OUT="${OUTPUT_DIR}/athanoros-${EDITION}-amd64-${VERSION}.iso"
+
+  cp "${ISO_SRC}" "${ISO_OUT}"
+  pushd "${OUTPUT_DIR}" > /dev/null
+  sha256sum "$(basename "${ISO_OUT}")" > "$(basename "${ISO_OUT}").sha256"
+  popd > /dev/null
+  echo "Edition complete: ${ISO_OUT}"
+done
+
+# ── Also output the stage3 tarball ───────────────────────────────────────────
 TARBALL_OUT="${OUTPUT_DIR}/athanoros-stage3-amd64-${VERSION}.tar.xz"
-
-cp "${ISO_SRC}" "${ISO_OUT}"
 cp "${STAGE3_DEST}" "${TARBALL_OUT}"
-
 pushd "${OUTPUT_DIR}" > /dev/null
-sha256sum "$(basename "${ISO_OUT}")"     > "$(basename "${ISO_OUT}").sha256"
 sha256sum "$(basename "${TARBALL_OUT}")" > "$(basename "${TARBALL_OUT}").sha256"
 popd > /dev/null
 
 echo ""
-echo "Build complete. Outputs:"
+echo "All editions built. Outputs:"
 ls -lh "${OUTPUT_DIR}/"

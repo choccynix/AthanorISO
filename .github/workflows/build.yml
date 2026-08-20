@@ -17,6 +17,10 @@ on:
         type: boolean
         required: false
         default: false
+      editions:
+        description: 'Editions to build (minimal, desktop, or "minimal desktop")'
+        required: false
+        default: 'minimal desktop'
 
 jobs:
   build:
@@ -71,17 +75,10 @@ jobs:
         run: echo "VERSION=$(date +%Y%m%d)" >> "${GITHUB_ENV}"
 
       - name: Run build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BINPKGS_TOKEN: ${{ secrets.BINPKGS_TOKEN }}
-          BRANCH: ${{ github.ref_name }}
         run: |
           chmod +x /athanor/scripts/build.sh
           cd /athanor
-          VERSION="${VERSION}" BRANCH="${BRANCH}" \
-            GH_TOKEN="${GH_TOKEN}" \
-            BINPKGS_TOKEN="${BINPKGS_TOKEN:-}" \
-            ./scripts/build.sh
+          VERSION="${VERSION}" ./scripts/build.sh
 
       - name: Upload release
         env:
