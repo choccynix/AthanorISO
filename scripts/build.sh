@@ -9,6 +9,7 @@ OUTPUT_DIR="${REPO_DIR}/output"
 SPECS_DIR="${REPO_DIR}/catalyst/specs"
 CATALYST_CONF="${REPO_DIR}/catalyst/catalyst.conf"
 VERSION="${VERSION:-$(date +%Y%m%d)}"
+BRANCH="${BRANCH:-main}"
 MIRROR="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-musl-llvm-openrc"
 
 mkdir -p "${BUILDS_DIR}" "${OUTPUT_DIR}"
@@ -29,6 +30,28 @@ fill_spec() {
     "${src}" > "${dst}"
 }
 
+# ── Dev branch: enable binhost ────────────────────────────────────────────────
+if [[ "${BRANCH}" == "dev" || "${BRANCH}" == feature/* || "${BRANCH}" == fix/* ]]; then
+  log "Dev branch (${BRANCH}) — enabling athanor-binpkgs binhost"
+
+  if [[ -n "${GH_TOKEN:-}" ]]; then
+    echo "Refreshing binhost Packages index..."
+    BINPKG_REPO="choccynix/athanor-binpkgs" \
+      GH_TOKEN="${GH_TOKEN}" \
+      BINPKGS_TOKEN="${BINPKGS_TOKEN:-}" \
+      python3 "${REPO_DIR}/scripts/generate-binhost-index.py" \
+      || echo "Warning: index refresh failed, building from source if needed"
+  else
+    echo "No GH_TOKEN — skipping binhost index refresh"
+  fi
+
+  if [[ -f "${REPO_DIR}/catalyst/portage/make.conf.dev" ]]; then
+    cp "${REPO_DIR}/catalyst/portage/make.conf.dev" \
+       "${REPO_DIR}/catalyst/portage/make.conf"
+    echo "Binhost make.conf active"
+  fi
+fi
+
 # ── Pre-flight USE flag check ─────────────────────────────────────────────────
 log "Pre-flight USE flag check"
 if ! emerge --pretend --nospinner --autounmask=n \
@@ -39,8 +62,6 @@ if ! emerge --pretend --nospinner --autounmask=n \
     sys-kernel/gentoo-kernel-bin \
     sys-kernel/installkernel 2>&1; then
   echo "ERROR: USE flag pre-flight failed."
-  echo "Fix flags in:      ${REPO_DIR}/catalyst/portage/package.use/athanor"
-  echo "Fix host flags in: /etc/portage/package.use/catalyst-host"
   exit 1
 fi
 echo "Pre-flight passed."
@@ -65,7 +86,7 @@ while IFS= read -r line; do
 done < "${FILELIST}"
 
 if [[ -z "${LATEST}" ]]; then
-  echo "ERROR: Could not parse stage3 filename from:"
+  echo "ERROR: Could not parse stage3 filename"
   cat "${FILELIST}"
   exit 1
 fi
@@ -95,18 +116,18 @@ for f in "${CATALYST_DIR}/snapshots/"*.sqfs; do
 done
 
 if [[ -z "${TREEISH}" ]]; then
-  echo "ERROR: No snapshot found in ${CATALYST_DIR}/snapshots/"
+  echo "ERROR: No snapshot found"
   exit 1
 fi
 echo "Snapshot: ${TREEISH}"
 
-# ── Step 2.5: Stage installer files for fsscript ─────────────────────────────
+# ── Step 2.5: Stage installer files ──────────────────────────────────────────
 log "Staging installer files"
 if [[ -d "${REPO_DIR}/installer" ]]; then
   cp -r "${REPO_DIR}/installer" "${CATALYST_DIR}/installer"
-  echo "Installer staged from ${REPO_DIR}/installer"
+  echo "Installer staged"
 else
-  echo "No installer/ directory found in repo — skipping"
+  echo "No installer/ directory — skipping"
 fi
 
 # ── Step 3: livecd-stage1 ────────────────────────────────────────────────────

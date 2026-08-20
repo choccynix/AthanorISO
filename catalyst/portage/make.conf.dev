@@ -1,0 +1,28 @@
+COMMON_FLAGS="-O2 -pipe"
+CFLAGS="${COMMON_FLAGS}"
+CXXFLAGS="${COMMON_FLAGS}"
+FCFLAGS="${COMMON_FLAGS}"
+FFLAGS="${COMMON_FLAGS}"
+
+MAKEOPTS="-j2 -l2"
+EMERGE_DEFAULT_OPTS="--jobs=2 --load-average=2"
+
+# Use prebuilt packages from athanor-binpkgs release assets
+# Packages index is served as a release asset named "Packages"
+PORTAGE_BINHOST="https://github.com/choccynix/athanor-binpkgs/releases/latest/download/Packages"
+
+# getbinpkg: prefer binaries when available
+# buildpkg: save newly built packages for future use
+FEATURES="getbinpkg buildpkg binpkg-multi-instance"
+
+CC="clang"
+CXX="clang++"
+AR="llvm-ar"
+NM="llvm-nm"
+RANLIB="llvm-ranlib"
+
+USE="musl -systemd -pam -nls unicode"
+ACCEPT_LICENSE="*"
+ACCEPT_KEYWORDS="amd64"
+
+GENTOO_MIRRORS="https://distfiles.gentoo.org"
