@@ -7,6 +7,7 @@ on:
     branches:
       - main
       - dev
+      - main_desktop_bin
       - 'feature/**'
       - 'fix/**'
   workflow_dispatch:
