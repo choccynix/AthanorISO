@@ -15,6 +15,11 @@ ANSI_COLOR="1;35"
 EOF
 ln -sf /etc/os-release /usr/lib/os-release 2>/dev/null || true
 
+# Fix OpenRC boot banner
+for f in /lib/rc/sh/functions.sh /usr/lib/rc/sh/functions.sh; do
+    [[ -f "${f}" ]] && sed -i 's/Gentoo Linux/AthanorOS/g' "${f}" 2>/dev/null || true
+done
+
 # ── hostname ──────────────────────────────────────────────────────────────────
 echo "athanoros" > /etc/hostname
 cat > /etc/hosts << 'EOF'
@@ -97,40 +102,23 @@ Login as root (no password)
 
 EOF
 
-# ── TTY / login setup — use inittab for reliable TTY allocation ───────────────
-# OpenRC agetty services in a live environment don't allocate a proper TTY,
-# causing "not a tty" errors and scrambled keyboard input.
-# inittab is more reliable — it spawns getty directly with proper TTY control.
-
-# Disable ALL OpenRC agetty services to avoid conflicts
-for i in 1 2 3 4 5 6; do
+# ── agetty — ONLY tty1, no competing gettys (fixes scrambled keyboard) ────────
+# The keyboard scramble happens when multiple agetty processes all receive the
+# same keystrokes and interleave them. Kill all but tty1.
+for i in 2 3 4 5 6; do
     rc-update del agetty.tty${i} default 2>/dev/null || true
-    rc-update del agetty.tty${i} sysinit 2>/dev/null || true
     rm -f /etc/init.d/agetty.tty${i} 2>/dev/null || true
     rm -f /etc/conf.d/agetty.tty${i} 2>/dev/null || true
 done
 
-# Write inittab — single getty on tty1 with autologin, nothing else
-cat > /etc/inittab << 'EOF'
-# /etc/inittab — AthanorOS live environment
-# Single TTY only — prevents scrambled keyboard input
-
-# Default runlevel
-id:3:initdefault:
-
-# System init
-si::sysinit:/sbin/openrc sysinit
-rc::bootwait:/sbin/openrc boot
-l3:3:wait:/sbin/openrc default
-
-# Single getty on tty1 with root autologin
-# -a root: autologin as root
-# -J: disable UART speed negotiation (cleaner for virtual consoles)
-c1:12345:respawn:/sbin/agetty -a root -J 38400 tty1 linux
-
-# Handle shutdown/reboot
-ca:12345:ctrlaltdel:/sbin/shutdown -r now
+mkdir -p /etc/conf.d
+cat > /etc/conf.d/agetty.tty1 << 'EOF'
+agetty_options="--autologin root --noclear"
+agetty_tty="tty1"
 EOF
+
+ln -sf /etc/init.d/agetty /etc/init.d/agetty.tty1 2>/dev/null || true
+rc-update add agetty.tty1 default 2>/dev/null || true
 
 # ── root with no password for live session ────────────────────────────────────
 passwd -d root

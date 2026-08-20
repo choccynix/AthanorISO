@@ -21,6 +21,9 @@ livecd/packages:
 	app-misc/livecd-tools
 	app-shells/bash
 	dev-vcs/git
+	sys-devel/make
+	sys-devel/gcc
+	sys-libs/musl
 	sys-fs/e2fsprogs
 	sys-fs/dosfstools
 	sys-fs/btrfs-progs
@@ -38,12 +41,6 @@ livecd/packages:
 	sys-apps/gptfdisk
 	sys-process/htop
 	sys-kernel/linux-firmware
-	x11-wm/dwm
-	x11-terms/st
-	x11-misc/dmenu
-	x11-misc/slock
-	www-client/surf
-	x11-misc/slstatus
 	x11-apps/xinit
 	x11-base/xorg-server
 	x11-drivers/xf86-input-libinput
@@ -51,4 +48,10 @@ livecd/packages:
 	x11-drivers/xf86-video-fbdev
 	x11-apps/xrdb
 	x11-apps/xprop
+	x11-apps/xsetroot
+	x11-misc/xterm
+	x11-libs/libX11
+	x11-libs/libXft
+	x11-libs/libXinerama
+	x11-libs/libXrandr
 	media-fonts/liberation-fonts
