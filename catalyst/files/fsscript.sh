@@ -90,7 +90,7 @@ cat > /etc/motd << 'EOF'
   ── Networking ─────────────────────────────────────────────────────────
   • Wired:    dhcpcd <interface>
   • Wireless: wpa_supplicant -B -i <iface> -c /etc/wpa_supplicant.conf
-              dhcpcd <iface>
+  dhcpcd <iface> ((will find a better way to handle this thats less of a pain))
 
   ══════════════════════════════════════════════════════════════════════
 

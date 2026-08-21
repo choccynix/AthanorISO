@@ -39,6 +39,16 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
+          mkdir -p /etc/portage/binrepos.conf
+
+          cat > /etc/portage/binrepos.conf/athanor.conf <<'EOF'
+          [athanor]
+          priority = 9999
+          sync-uri = https://github.com/choccynix/athanor-binpkgs/releases/latest/download/Packages
+          EOF
+
+          mkdir -p /var/db/repos/gentoo
+          emerge-webrsync -q
           mkdir -p /var/db/repos/gentoo
           emerge-webrsync -q
 
