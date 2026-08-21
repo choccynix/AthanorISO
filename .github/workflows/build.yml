@@ -48,8 +48,8 @@ jobs:
           EOF
 
           cat >> /etc/portage/make.conf <<'EOF'
-          FEATURES="${FEATURES} --getbinpkg"
-          #EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg=y --binpkg-respect-use=y"
+          FEATURES="${FEATURES} getbinpkg"
+          EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg=y --binpkg-respect-use=y"
           ACCEPT_LICENSE="*"
           EOF
 
