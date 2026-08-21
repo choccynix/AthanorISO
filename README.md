@@ -40,7 +40,8 @@ Built on three principles:
 
 > Latest release → **[Releases](../../releases/latest)**
 
-Desktop ISOs are on the way, please use minimal ones in the meantime.
+Desktop ISOs are on the way, please use minimal ones in the meantime. 
+This readme is out of date. and the docs will be up to date as the time goes on
 
 | File | Description |
 |---|---|

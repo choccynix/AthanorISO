@@ -40,20 +40,19 @@ jobs:
       - name: Install dependencies
         run: |
           mkdir -p /etc/portage/binrepos.conf
-
           cat > /etc/portage/binrepos.conf/athanor.conf <<'EOF'
           [athanor]
           priority = 9999
-          sync-uri = https://github.com/choccynix/athanor-binpkgs/releases/latest/download/${CHOST}
+          sync-uri = https://github.com/choccynix/athanor-binpkgs/releases/latest/download
+          verify-signature = false
           EOF
 
           cat >> /etc/portage/make.conf <<'EOF'
-
-          # AnthorOS binary package host
           FEATURES="${FEATURES} getbinpkg"
-          EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} getbinpkg"
-          ACCEPT_LICENSE="-* @BINARY-REDISTRIBUTABLE"
+          EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg=y --binpkg-respect-use=y"
+          ACCEPT_LICENSE="*"
           EOF
+
 
           mkdir -p /var/db/repos/gentoo
           emerge-webrsync -q

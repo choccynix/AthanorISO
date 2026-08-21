@@ -1,7 +1,0 @@
-# Build outputs
-output/
-
-# Don't ignore installer dir itself — track the README and placeholder
-# Add your private installer files here and they'll be bundled into the ISO
-!installer/
-!installer/**
