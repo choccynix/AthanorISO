@@ -47,6 +47,13 @@ jobs:
           sync-uri = https://github.com/choccynix/athanor-binpkgs/releases/latest/download/Packages
           EOF
 
+          cat >> /etc/portage/make.conf <<'EOF'
+
+          # AnthorOS binary package host
+          FEATURES="${FEATURES} getbinpkg"
+          EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg"
+          EOF
+
           mkdir -p /var/db/repos/gentoo
           emerge-webrsync -q
           mkdir -p /var/db/repos/gentoo

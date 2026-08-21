@@ -11,7 +11,7 @@ EMERGE_DEFAULT_OPTS="--jobs=2 --load-average=2"
 # Packages index is served as a release asset named "Packages"
 # PORTAGE_BINHOST="https://github.com/choccynix/athanor-binpkgs/releases/latest/download/Packages"
 
-FEATURES="${FEATURES} getbinpkg buildpkg binpkg-multi-instance"
+FEATURES="${FEATURES} --getbinpkg buildpkg binpkg-multi-instance"
 
 # getbinpkg: prefer binaries when available
 # buildpkg: save newly built packages for future use
