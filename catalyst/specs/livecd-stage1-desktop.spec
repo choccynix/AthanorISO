@@ -21,8 +21,6 @@ livecd/packages:
 	app-misc/livecd-tools
 	app-shells/bash
 	dev-vcs/git
-	sys-devel/make
-	sys-devel/gcc
 	sys-libs/musl
 	sys-fs/e2fsprogs
 	sys-fs/dosfstools

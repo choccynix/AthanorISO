@@ -42,7 +42,7 @@ chmod +x /opt/athanor-installer/*.sh 2>/dev/null || true
 # Create a convenience wrapper so 'install-athanor' works from anywhere
 cat > /usr/local/bin/install-athanor << 'WRAPPER'
 #!/usr/bin/env bash
-exec /opt/athanor-installer/linter.sh "$@"
+exec /opt/athanor-installer/Athanor_installer.sh "$@"
 WRAPPER
 chmod +x /usr/local/bin/install-athanor
 
@@ -76,6 +76,7 @@ cat > /etc/motd << 'EOF'
       install-athanor
 
   Installer files are in /opt/athanor-installer/
+  (BE WARNED. THE INSTALLER WAS MADE BY SOMEONE ELSE AND ISNT TESTED! DO NOT USE ON HARDWARE)
 
   ── What's available ───────────────────────────────────────────────────
   • vim, nano          — text editors

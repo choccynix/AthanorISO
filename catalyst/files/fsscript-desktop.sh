@@ -189,7 +189,7 @@ cat > /etc/motd << 'EOF'
   Edit config.h, then: make CC=clang PREFIX=/usr/local install
 
   ── Installer ──────────────────────────────────────────────────────────
-  Run:    install-athanor
+  Run:    install-athanor (NOT TESTED)
 
   ══════════════════════════════════════════════════════════════════════
 

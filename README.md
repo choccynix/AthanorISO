@@ -40,6 +40,8 @@ Built on three principles:
 
 > Latest release → **[Releases](../../releases/latest)**
 
+Desktop ISOs are on the way, please use minimal ones in the meantime.
+
 | File | Description |
 |---|---|
 | `athanoros-amd64-YYYYMMDD.iso` | Bootable live ISO (BIOS + UEFI) |
