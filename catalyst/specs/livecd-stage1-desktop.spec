@@ -47,7 +47,7 @@ livecd/packages:
 	x11-apps/xrdb
 	x11-apps/xprop
 	x11-apps/xsetroot
-	x11-misc/xterm
+	x11-terms/xterm
 	x11-libs/libX11
 	x11-libs/libXft
 	x11-libs/libXinerama
