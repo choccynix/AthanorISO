@@ -47,7 +47,7 @@ jobs:
           sync-type = git
           sync-uri = https://github.com/choccynix/choccynix.github.io.git
           auto-sync = yes
-          eof
+          EOF
 
           cat >> /etc/portage/make.conf <<'eof'
           features="${features} getbinpkg"
