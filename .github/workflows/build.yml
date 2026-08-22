@@ -42,17 +42,18 @@ jobs:
 
           mkdir -p /etc/portage/binrepos.conf
           cat > /etc/portage/binrepos.conf/gentoo.conf <<'EOF'
-          [gentoo]
-          location = /var/cache/binpkgs/gentoo
-          sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64_musl_llvm/
-          priority = 10
-          EOF
+          [choccynix]
+          location = /var/db/repos/choccynix
+          sync-type = git
+          sync-uri = https://github.com/choccynix/choccynix.github.io.git
+          auto-sync = yes
+          eof
 
-          cat >> /etc/portage/make.conf <<'EOF'
-          FEATURES="${FEATURES} getbinpkg"
-          EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg=y --binpkg-respect-use=y"
-          ACCEPT_LICENSE="*"
-          EOF
+          cat >> /etc/portage/make.conf <<'eof'
+          features="${features} --getbinpkg"
+          emerge_default_opts="${emerge_default_opts} --getbinpkg=y --binpkg-respect-use=y"
+          accept_license="*"
+          eof
 
 
           mkdir -p /var/db/repos/gentoo
@@ -78,33 +79,33 @@ jobs:
 
           emerge --nospinner -q dev-util/catalyst dev-vcs/git
 
-      - name: Checkout repository
+      - name: checkout repository
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          gh_token: ${{ secrets.github_token }}
         run: |
           git clone --depth=1 --branch "${{ github.ref_name }}" \
-            "https://x-access-token:${GH_TOKEN}@github.com/choccynix/AnthorISO.git" \
+            "https://x-access-token:${gh_token}@github.com/choccynix/anthoriso.git" \
             /athanor
 
-      - name: Patch Catalyst bugs
+      - name: patch catalyst bugs
         run: python3 /athanor/scripts/patch-catalyst.py
 
-      - name: Set VERSION
-        run: echo "VERSION=$(date +%Y%m%d)" >> "${GITHUB_ENV}"
+      - name: set version
+        run: echo "version=$(date +%y%m%d)" >> "${github_env}"
 
-      - name: Run build
+      - name: run build
         run: |
           chmod +x /athanor/scripts/build.sh
           cd /athanor
-          VERSION="${VERSION}" ./scripts/build.sh
+          version="${version}" ./scripts/build.sh
 
-      - name: Upload release
+      - name: upload release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          BRANCH: ${{ github.ref_name }}
-          EVENT: ${{ github.event_name }}
-          PUBLISH_INPUT: ${{ github.event.inputs.publish_release }}
-          RUN_NUMBER: ${{ github.run_number }}
-          VERSION: ${{ env.VERSION }}
+          gh_token: ${{ secrets.github_token }}
+          repo: ${{ github.repository }}
+          branch: ${{ github.ref_name }}
+          event: ${{ github.event_name }}
+          publish_input: ${{ github.event.inputs.publish_release }}
+          run_number: ${{ github.run_number }}
+          version: ${{ env.version }}
         run: python3 /athanor/scripts/upload-release.py /athanor/output
