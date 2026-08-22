@@ -38,7 +38,7 @@ fill_spec() {
 # from GitHub Pages and the package blobs are hosted by GitHub Releases.
 # Keep the ISO build itself read-only with respect to the binhost: package
 # publishing belongs exclusively to the athanor-binpkgs repository workflow.
-ATHANOR_BINHOST_URL="${ATHANOR_BINHOST_URL:-https://choccynix.github.io/athanor-binpkgs/}"
+ATHANOR_BINHOST_URL="${ATHANOR_BINHOST_URL:-https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64_musl_llvm/}"
 
 log "Checking AthanorOS binhost"
 if ! curl -fsSL --connect-timeout 20 --max-time 60 \
