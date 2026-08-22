@@ -39,17 +39,27 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
+
+          emerge sec-keys/openpgp-keys-gentoozh
+          getuto
+          gpg --homedir /etc/portage/gnupg --import /usr/share/openpgp-keys/gentoozh.asc
+          gpg --homedir /etc/portage/gnupg --batch --yes --pinentry-mode loopback \
+          --passphrase-file /etc/portage/gnupg/pass --lsign-key 6A0726AF1476A2F382C6AC6638A0234EC16AD42E
+          gpg --homedir /etc/portage/gnupg --check-trustdb
+
           mkdir -p /etc/portage/binrepos.conf
-          cat > /etc/portage/binrepos.conf/athanor.conf <<'EOF'
-          [athanor]
-          priority = 9999
-          sync-uri = https://choccynix.github.io/athanor-binpkgs
-          verify-signature = false
+          cat > /etc/portage/binrepos.conf/gentoo-zh.conf <<'EOF'
+          [gentoo-zh]
+          priority = 10
+          sync-uri = https://distfiles.gentoozh.org/binpkgs/x86-64
+          verify-signature = true
+          location = /var/cache/binhost/gentoo-zh
           EOF
 
           cat >> /etc/portage/make.conf <<'EOF'
+          GENTOO_MIRRORS="${GENTOO_MIRRORS} https://distfiles.gentoozh.org https://mirrors.cernet.edu.cn/gentoo-zh https://mirror.nju.edu.cn/gentoo-zh https://mirror.nyist.edu.cn/gentoo-zh https://mirrors.ha.edu.cn/gentoo-zh"
           FEATURES="${FEATURES} getbinpkg"
-          EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg=y --binpkg-respect-use=y"
+          #EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg=y --binpkg-respect-use=y"
           ACCEPT_LICENSE="*"
           EOF
 
