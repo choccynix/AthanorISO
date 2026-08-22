@@ -2,7 +2,7 @@ name: Build AthanorOS
 
 on:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
@@ -43,7 +43,7 @@ jobs:
           cat > /etc/portage/binrepos.conf/athanor.conf <<'EOF'
           [athanor]
           priority = 9999
-          sync-uri = https://github.com/choccynix/athanor-binpkgs/releases/latest/download
+          sync-uri = https://choccynix.github.io/athanor-binpkgs
           verify-signature = false
           EOF
 

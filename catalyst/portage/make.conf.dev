@@ -4,17 +4,14 @@ CXXFLAGS="${COMMON_FLAGS}"
 FCFLAGS="${COMMON_FLAGS}"
 FFLAGS="${COMMON_FLAGS}"
 
-MAKEOPTS="-j2 -l2"
+MAKEOPTS="$(nproc)"
 EMERGE_DEFAULT_OPTS="--jobs=2 --load-average=2"
 
-# Use prebuilt packages from athanor-binpkgs release assets
-# Packages index is served as a release asset named "Packages"
-PORTAGE_BINHOST="https://github.com/choccynix/athanor-binpkgs/releases/latest/download"
-
-
-# getbinpkg: prefer binaries when available
-# buildpkg: save newly built packages for future use
-FEATURES="getbinpkg buildpkg binpkg-multi-instance"
+# Prefer AthanorOS binary packages when a matching build exists.
+# The repository endpoint itself is configured in binrepos.conf/athanor.conf.
+FEATURES="${FEATURES} buildpkg getbinpkg binpkg-multi-instance"
+EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg=y --binpkg-respect-use=y"
+PORTAGE_BINHOST="https://choccynix.github.io/athanor-binpkgs/"
 
 CC="clang"
 CXX="clang++"
@@ -27,3 +24,4 @@ ACCEPT_LICENSE="*"
 ACCEPT_KEYWORDS="amd64"
 
 GENTOO_MIRRORS="https://distfiles.gentoo.org"
+

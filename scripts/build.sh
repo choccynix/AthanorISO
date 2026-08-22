@@ -33,25 +33,24 @@ fill_spec() {
     "${src}" > "${dst}"
 }
 
-# ── Dev branch: enable binhost ────────────────────────────────────────────────
-if [[ "${BRANCH}" == "dev" || "${BRANCH}" == feature/* || "${BRANCH}" == fix/* ]]; then
-  log "Dev branch (${BRANCH}) — enabling athanor-binpkgs binhost"
+# ── AthanorOS binhost ─────────────────────────────────────────────────────────
+# The binhost is a normal Portage repository. Its Packages index is served
+# from GitHub Pages and the package blobs are hosted by GitHub Releases.
+# Keep the ISO build itself read-only with respect to the binhost: package
+# publishing belongs exclusively to the athanor-binpkgs repository workflow.
+ATHANOR_BINHOST_URL="${ATHANOR_BINHOST_URL:-https://choccynix.github.io/athanor-binpkgs/}"
 
-  if [[ -n "${BINPKGS_TOKEN:-}" || -n "${GH_TOKEN:-}" ]]; then
-    echo "Refreshing binhost Packages index..."
-    BINPKG_REPO="choccynix/athanor-binpkgs" \
-      GH_TOKEN="${GH_TOKEN:-}" \
-      BINPKGS_TOKEN="${BINPKGS_TOKEN:-}" \
-      python3 "${REPO_DIR}/scripts/generate-binhost-index.py" \
-      || echo "Warning: index refresh failed, building from source if needed"
-  fi
-
-  if [[ -f "${REPO_DIR}/catalyst/portage/make.conf.dev" ]]; then
-    cp "${REPO_DIR}/catalyst/portage/make.conf.dev" \
-       "${REPO_DIR}/catalyst/portage/make.conf"
-    echo "Binhost make.conf active"
-  fi
+log "Checking AthanorOS binhost"
+if ! curl -fsSL --connect-timeout 20 --max-time 60 \
+    -o /tmp/athanor-Packages "${ATHANOR_BINHOST_URL%/}/Packages"; then
+  echo "ERROR: AthanorOS binhost is unavailable: ${ATHANOR_BINHOST_URL}"
+  exit 1
 fi
+if [[ ! -s /tmp/athanor-Packages ]]; then
+  echo "ERROR: AthanorOS binhost returned an empty Packages index."
+  exit 1
+fi
+echo "Binhost OK: ${ATHANOR_BINHOST_URL} ($(wc -l < /tmp/athanor-Packages) lines)"
 
 # ── Pre-flight USE flag check ─────────────────────────────────────────────────
 log "Pre-flight USE flag check"
