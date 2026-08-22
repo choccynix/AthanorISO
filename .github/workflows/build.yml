@@ -91,7 +91,7 @@ jobs:
         run: python3 /athanor/scripts/patch-catalyst.py
 
       - name: set version
-        run: echo "version=$(date +%y%m%d)" >> "${github_env}"
+        run: echo "version=$(date +%y%m%d)" >> "$GITHUB_ENV"
 
       - name: run build
         run: |
