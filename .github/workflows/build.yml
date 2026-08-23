@@ -78,7 +78,7 @@ jobs:
             echo "sys-kernel/dracut -systemd"
           } > /etc/portage/package.use/catalyst-host
 
-          emerge --nospinner -q dev-util/catalyst dev-vcs/git
+          emerge --usepkg --nospinner -q dev-util/catalyst dev-vcs/git
 
       - name: checkout repository
         env:
