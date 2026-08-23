@@ -54,7 +54,7 @@ echo "Binhost OK: ${ATHANOR_BINHOST_URL} ($(wc -l < /tmp/athanor-Packages) lines
 
 # ── Pre-flight USE flag check ─────────────────────────────────────────────────
 log "Pre-flight USE flag check"
-if ! emerge --usepkg --pretend --nospinner --autounmask=n \
+if ! emerge --usepkg --getbinpkg --verbose --pretend --nospinner --autounmask=n \
     dev-util/catalyst \
     sys-boot/grub \
     sys-apps/util-linux \
@@ -148,10 +148,10 @@ for EDITION in ${EDITIONS}; do
   fill_spec "${STAGE2_SPEC}" "/tmp/athanor-stage2-${EDITION}.spec"
 
   log "livecd-stage1 [${EDITION}]"
-  catalyst --configs "${CATALYST_CONF}" -a -f "/tmp/athanor-stage1-${EDITION}.spec"
+  catalyst -v --configs "${CATALYST_CONF}" -a -f "/tmp/athanor-stage1-${EDITION}.spec"
 
   log "livecd-stage2 [${EDITION}]"
-  catalyst --configs "${CATALYST_CONF}" -a -f "/tmp/athanor-stage2-${EDITION}.spec"
+  catalyst -v --configs "${CATALYST_CONF}" -a -f "/tmp/athanor-stage2-${EDITION}.spec"
 
   # Collect outputs for this edition
   ISO_SRC="${CATALYST_DIR}/builds/athanor/athanoros-${EDITION}-amd64-${VERSION}.iso"
