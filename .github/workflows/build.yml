@@ -41,12 +41,11 @@ jobs:
         run: |
 
           mkdir -p /etc/portage/binrepos.conf
-          cat > /etc/portage/binrepos.conf/gentoo.conf <<'EOF'
+          cat > /etc/portage/binrepos.conf/choccynix.conf <<'EOF'
           [choccynix]
           priority = 9999
           location = /var/db/repos/choccynix
-          sync-type = git
-          sync-uri = https://github.com/choccynix/choccynix.github.io.git
+          sync-uri = https://choccynix.github.io/binhost
           auto-sync = yes
           EOF
 
