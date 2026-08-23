@@ -39,6 +39,12 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
+          echo ">>> Disabling Portage snapshot signature verification..."
+          if [ -f /etc/portage/repos.conf/gentoo.conf ]; then
+              sed -i 's/sync-git-verify-commit-signature = yes/sync-git-verify-commit-signature = false/g' /etc/portage/repos.conf/gentoo.conf
+              sed -i 's/sync-git-verify-commit-signature = true/sync-git-verify-commit-signature = false/g' /etc/portage/repos.conf/gentoo.conf
+              sed -i 's/sync-webrsync-verify-signature = yes/sync-webrsync-verify-signature = false/g' /etc/portage/repos.conf/gentoo.conf
+          fi
 
           mkdir -p /etc/portage/binrepos.conf
           cat > /etc/portage/binrepos.conf/choccynix.conf <<'EOF'

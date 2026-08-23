@@ -40,6 +40,14 @@ fill_spec() {
 # publishing belongs exclusively to the athanor-binpkgs repository workflow.
 ATHANOR_BINHOST_URL="${ATHANOR_BINHOST_URL:-https://choccynix.github.io/binhost}"
 
+log "Disabling Portage snapshot signature verification...temp use only"
+echo ">>> Disabling Portage snapshot signature verification..."
+if [ -f /etc/portage/repos.conf/gentoo.conf ]; then
+    sed -i 's/sync-git-verify-commit-signature = yes/sync-git-verify-commit-signature = false/g' /etc/portage/repos.conf/gentoo.conf
+    sed -i 's/sync-git-verify-commit-signature = true/sync-git-verify-commit-signature = false/g' /etc/portage/repos.conf/gentoo.conf
+    sed -i 's/sync-webrsync-verify-signature = yes/sync-webrsync-verify-signature = false/g' /etc/portage/repos.conf/gentoo.conf
+fi
+
 log "Checking AthanorOS binhost"
 if ! curl -fsSL --connect-timeout 20 --max-time 60 \
     -o /tmp/athanor-Packages "${ATHANOR_BINHOST_URL%/}/Packages"; then
