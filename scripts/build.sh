@@ -54,7 +54,7 @@ echo "Binhost OK: ${ATHANOR_BINHOST_URL} ($(wc -l < /tmp/athanor-Packages) lines
 
 # ── Pre-flight USE flag check ─────────────────────────────────────────────────
 log "Pre-flight USE flag check"
-if ! emerge --pretend --nospinner --autounmask=n \
+if ! emerge --usepkg --pretend --nospinner --autounmask=n \
     dev-util/catalyst \
     sys-boot/grub \
     sys-apps/util-linux \

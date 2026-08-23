@@ -43,6 +43,7 @@ jobs:
           mkdir -p /etc/portage/binrepos.conf
           cat > /etc/portage/binrepos.conf/gentoo.conf <<'EOF'
           [choccynix]
+          priority = 9999
           location = /var/db/repos/choccynix
           sync-type = git
           sync-uri = https://github.com/choccynix/choccynix.github.io.git
