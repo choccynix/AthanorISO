@@ -57,7 +57,7 @@ jobs:
 
           cat >> /etc/portage/make.conf <<'eof'
           features="${features} getbinpkg"
-          emerge_default_opts="${emerge_default_opts} --getbinpkg=y --binpkg-respect-use=y"
+          emerge_default_opts="${emerge_default_opts} --getbinpkg=y --binpkg-respect-use=n"
           accept_license="*"
           eof
 
