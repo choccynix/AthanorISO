@@ -16,7 +16,7 @@ livecd/use:
 
 livecd/packages:
 	app-editors/nano
-	app-editors/vim
+	app-editors/neovim
 	app-misc/screen
 	app-misc/livecd-tools
 	app-shells/bash
@@ -53,3 +53,17 @@ livecd/packages:
 	x11-libs/libXinerama
 	x11-libs/libXrandr
 	media-fonts/liberation-fonts
+  x11-misc/dunst
+  app-misc/lf
+  media-sound/mpd
+  media-video/mpv
+  media-sound/ncmpcpp
+  net-news/newsboat
+  media-gfx/sxiv
+  app-text/zathura
+  app-shells/zsh
+  x11-misc/pcmanfm
+  sys-process/htop
+  x11-misc/picom
+  lxde-base/lxappearance
+

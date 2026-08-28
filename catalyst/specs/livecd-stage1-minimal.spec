@@ -15,10 +15,12 @@ livecd/use:
 
 livecd/packages:
 	app-editors/nano
-	app-editors/vim
+	app-editors/neovim
 	app-misc/screen
 	app-misc/livecd-tools
 	app-shells/bash
+  app-shells/zsh
+  app-misc/neofetch
 	dev-vcs/git
 	sys-fs/e2fsprogs
 	sys-fs/dosfstools
@@ -37,3 +39,4 @@ livecd/packages:
 	sys-apps/gptfdisk
 	sys-process/htop
 	sys-kernel/linux-firmware
+  sys-process/htop

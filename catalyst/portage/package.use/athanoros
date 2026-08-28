@@ -7,3 +7,5 @@ sys-kernel/installkernel grub dracut -ugrd -ukify -generic-uki
 sys-kernel/gentoo-kernel-bin -generic-uki
 #dracut without systemd for musl+openrc
 sys-kernel/dracut -systemd
+#Xorg wanted this 
+sys-auth/pambase elogind
