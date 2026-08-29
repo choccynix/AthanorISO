@@ -62,7 +62,6 @@ livecd/packages:
   media-gfx/sxiv
   app-text/zathura
   app-shells/zsh
-  x11-misc/pcmanfm
   sys-process/htop
   x11-misc/picom
   lxde-base/lxappearance
