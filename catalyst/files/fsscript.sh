@@ -30,7 +30,7 @@ EOF
 
 # ── Clone athanor-installer into the live image ───────────────────────────────
 echo "Cloning athanor-installer..."
-git clone --depth=1 https://github.com/choccynix/athanor-installer.git \
+git clone --depth=1 https://github.com/choccynix/choccynix-installer.git \
     /opt/athanor-installer 2>/dev/null || {
     echo "Warning: could not clone athanor-installer (repo may not be public yet)"
     mkdir -p /opt/athanor-installer
@@ -42,7 +42,7 @@ chmod +x /opt/athanor-installer/*.sh 2>/dev/null || true
 # Create a convenience wrapper so 'install-athanor' works from anywhere
 cat > /usr/local/bin/install-athanor << 'WRAPPER'
 #!/usr/bin/env bash
-exec /opt/athanor-installer/Athanor_installer.sh "$@"
+exec /opt/athanor-installer/installer.sh "$@"
 WRAPPER
 chmod +x /usr/local/bin/install-athanor
 
