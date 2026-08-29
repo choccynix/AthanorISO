@@ -54,7 +54,7 @@ livecd/packages:
 	x11-libs/libXrandr
 	media-fonts/liberation-fonts
   x11-misc/dunst
-  app-misc/lf
+  app-misc/ranger
   media-sound/mpd
   media-video/mpv
   media-sound/ncmpcpp

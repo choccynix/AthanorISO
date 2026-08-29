@@ -132,6 +132,13 @@ EOF
 cat > /root/.xinitrc << 'EOF'
 #!/bin/sh
 xsetroot -solid "#1a1a2e"
+
+mpd &
+
+dunst &
+
+picom --backend xrender &
+
 slstatus &
 exec dwm
 EOF
